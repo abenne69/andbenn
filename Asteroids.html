@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Hackathon3 </title>
+
+	<canvas id="myCanvas" style = "text-align: center" style = "border: 3px solid black" width="600" height="600"></canvas>
+	<script type="text/javascript">
+
+		var context;
+		var canvas;
+		var bullets = [];
+		var bulletTimer = 0;
+		var ship = new ship();
+		var asteroids = [];
+		var level = 4;
+		var score = 0;
+		var aliens = [];
+		var alienTimer = 0;
+		var alienBullets = [];
+		var inProgress = false;
+
+
+
+//SHIP**************SHIP**************SHIP**************SHIP**************SHIP**************SHIP**************SHIP**************SHIP**************
+		function ship(){
+			this.deg = 0;
+			this.dX = 0;
+			this.dY = 0;
+			this.X = 300;
+			this.Y = 300;
+			this.timer = 0
+			this.lives = 3;
+
+			this.isAccelerating = false;
+			this.isLeft = false;
+			this.isRight = false;
+			this.isFiring = false;
+			this.isExploded = false;
+
+			this.img = new Image();
+			this.img.src = "userShip.png"
+
+			this.Explode = function(){
+				this.img.src = "explosion.png";
+				this.drawRotate();
+
+			}
+			this.checkCollision = function(){
+				if(this.isExploded == false){	
+					for(i of asteroids){
+						if((i.X >= this.X && i.X <= (this.img.width+this.X)) && (i.Y >= this.Y && i.Y <= (this.img.height+this.X))){
+							this.Explode();
+							this.isExploded = true;
+							this.lives--;
+							this.X = 300;
+							this.Y = 300;
+							this.dX = 0;
+							this.dY = 0;
+
+						}
+					}
+					for(i of alienBullets){
+						if((i.X >= this.X && i.X <= (this.img.width+this.X)) && (i.Y >= this.Y && i.Y <= (this.img.height+this.X))){
+							this.Explode();
+							this.isExploded = true;
+							this.lives--;
+							this.X = 300;
+							this.Y = 300;
+						}
+					}
+				}
+			}
+			this.move = function(){
+				this.X += this.dX;
+				this.Y += this.dY;
+			}
+			this.drawRotate = function(){
+				context.save();
+	 			context.translate(this.X, this.Y);
+	 			context.translate(16, 16);
+	 			context.rotate(this.deg*Math.PI/180);
+	 			context.drawImage((this.img),-(this.img).width/2,-(this.img).width/2);
+	 			context.restore();
+			}
+			this.modifySpeed = function(){
+				if(!this.isAccelerating){
+					var decrement = .1;
+					if(this.dX > decrement){
+						this.dX -= decrement;
+						if(this.dY > decrement)
+							this.dY-=decrement;
+						else if(this.dY <  -decrement)
+							this.dY+=decrement;
+						else
+							this.dY=0;
+					}else if(this.dX < -decrement){
+						this.dX += decrement;
+						if(this.dY > decrement)
+							this.dY-= decrement;
+						else if(this.dY <  -decrement)
+							this.dY+= decrement;
+						else
+							this.dY=0;
+					}else{
+						this.dX = 0;
+						if(this.dY > decrement)
+							this.dY-=decrement;
+						else if(this.dY <  -decrement)
+							this.dY+=decrement;
+						else
+							this.dY=0;
+					}
+				}else if(this.isAccelerating && (this.dX <= 5 && this.dX >= -5) && (this.dY <= 5 && this.dY >= -5)){
+					ship.dX += -(Math.sin(-(ship.deg*Math.PI/180)));
+					ship.dY += -(Math.cos(-(ship.deg*Math.PI/180)));
+				}
+			}
+			this.rotate = function(){
+				if(this.isLeft == true){
+					ship.deg += 5;
+				}else if(this.isRight == true){
+					ship.deg -= 5;
+				}
+			}
+			this.updateShip = function(){
+				this.checkCollision();
+				this.checkBorders();
+				this.rotate();
+				this.modifySpeed();
+				this.move();
+				this.drawRotate();
+
+				
+			}
+			this.checkBorders = function(){
+
+				if(this.Y >= 605){
+					this.Y = -3;
+				}else if(this.Y <= 0){
+					this.Y = 603;
+				}
+
+				if(this.X >= 605){
+					this.X = -3;
+				}else if(this.X <= 0){
+					this.X = 603;
+				}
+			}
+
+		}
+
+
+//ALIEN**************ALIEN**************ALIEN**************ALIEN**************ALIEN**************ALIEN**************ALIEN**************
+		function alien(){
+			this.dX;
+			this.dY;
+			this.X;
+			this.Y;
+			this.switchCounter = 0;
+			this.img = new Image();
+			this.imgAppend = "";
+			this.img.src = "alien" + this.imgAppend + ".png";
+			this.isFiring = false;
+			this.bulletTimer = 0;
+
+			this.updateAlien = function(){
+				this.move();
+				this.checkBorders();
+				this.switchCounter++;
+				this.switchImage();
+				this.checkCollision();
+				
+				this.bulletTimer++;
+				if(this.bulletTimer == 20){
+					this.fireBullet();
+					this.bulletTimer = 0;
+				}
+				context.drawImage(this.img, this.X, this.Y);
+			}
+			this.initAlien = function(){
+				this.X = Math.random()*500;
+				this.Y = Math.random()*500;
+				this.dX = (Math.random()*8)-4;
+				this.dY = (Math.random()*8)-4;
+				aliens.push(this);
+			}
+			this.move = function(){
+				this.X += this.dX;
+				this.Y += this.dY;
+			}	
+			this.checkBorders = function(){
+				if(this.Y >= 605){
+					this.Y = 0;
+				}else if(this.Y <= 0){
+					this.Y = 600;
+				}
+
+				if(this.X >= 605){
+					this.X = 0;
+				}else if(this.X <= 0){
+					this.X = 600;
+				}
+			}	
+			this.switchImage = function(){
+				if(this.switchCounter == 20){
+					if(this.imgAppend == ".png")
+						this.imgAppend = "2.png";
+					else
+						this.imgAppend = ".png";
+
+					this.img.src = "alien" + this.imgAppend;
+					this.switchCounter =0;
+				}
+			}
+			this.checkCollision = function(){
+				for(i of bullets){
+					if((i.X >= this.X && i.X <= (this.img.width+this.X)) && (i.Y >= this.Y && i.Y <= (this.img.height+this.X))){
+						i.iterations =40;
+						i.removeBullet();
+						this.Explode();
+						this.removeAlien();
+					}
+				}
+				for(i of asteroids){
+					if((i.X >= this.X && i.X <= (this.img.width+this.X)) && (i.Y >= this.Y && i.Y <= (this.img.height+this.X))){
+						this.Explode();
+						this.removeAlien();
+					}
+				}
+
+			}
+			this.fireBullet = function(){
+				var laser = new bullet();
+				laser.X = this.X+32;
+				laser.Y = this.Y+32;
+				laser.dX = (Math.random()*10)-5;
+				laser.dY = (Math.random()*10)-5;
+				laser.deg = Math.random()*360;
+				alienBullets.push(laser);
+			}
+			this.Explode = function(){
+				this.img.src = "explosion.png"
+				context.drawImage(this.img, this.X, this.Y);
+			}
+			this.removeAlien = function(){
+				aliens.splice(aliens.indexOf(this),1);
+			}
+		}
+
+
+//ASTEROID**************ASTEROID**************ASTEROID**************ASTEROID**************ASTEROID**************ASTEROID**************
+		function asteroid(){
+			this.dX;
+			this.dY;
+			this.X;
+			this.Y;
+			this.switchCounter = 0;
+			this.imgAppend = ".png"
+			this.currentImg;
+			this.img = new Image();
+			//this.img.src = this.currentImg + this.imgAppend;
+			this.Health = 3;
+
+			this.checkCollision = function(){
+				for(i of bullets){
+					if((i.X >= this.X && i.X <= (this.img.width+this.X)) && (i.Y >= this.Y && i.Y <= (this.img.height+this.X))){
+						i.iterations =40;
+						i.removeBullet();
+						if(this.Health>1){
+							for(z = 0; z < 2; z++){
+								var ass = new asteroid();
+								if(this.Health == 3){
+									score+=50
+									ass.currentImg = "medAss";
+								}else if(this.Health == 2){
+									score+=30;
+									ass.currentImg = "smallAss";
+								}
+								ass.Health = this.Health-1;
+								ass.X = (Math.random()*this.img.height)+this.X;
+								ass.Y = (Math.random()*this.img.width)+this.Y;
+								ass.dX = (Math.random()*8)-4;
+								ass.dY = (Math.random()*8)-4;
+								asteroids.push(ass);
+							}
+						}else{
+							score+=20;
+						}
+						
+						asteroids.splice(asteroids.indexOf(this),1);
+					}
+				}
+			}
+			this.checkBorders = function(){
+				if(this.Y >= 605){
+					this.Y = 0;
+				}else if(this.Y <= 0){
+					this.Y = 600;
+				}
+
+				if(this.X >= 605){
+					this.X = 0;
+				}else if(this.X <= 0){
+					this.X = 600;
+				}
+			}
+			this.initAsteroid = function(){
+				this.currentImg = "bigAss";
+				this.X = Math.random()*500;
+				this.Y = Math.random()*500;
+				this.dX = (Math.random()*8)-4;
+				this.dY = (Math.random()*8)-4;
+				asteroids.push(this);
+			}
+			this.move = function(){
+				this.X += this.dX;
+				this.Y += this.dY;
+			}
+			this.switchImage = function(){
+				if(this.switchCounter == 20){
+					if(this.imgAppend == ".png")
+						this.imgAppend = "2.png";
+					else
+						this.imgAppend = ".png";
+
+					this.img.src = this.currentImg + this.imgAppend;
+					this.switchCounter =0;
+				}
+			}
+			this.updateAsteroids = function(){
+				this.move();
+				this.checkBorders();
+				this.switchCounter++;
+				this.switchImage();
+				this.checkCollision();
+				context.drawImage(this.img, this.X, this.Y);
+			}
+		}
+
+
+//BULLET**************BULLET**************BULLET**************BULLET**************BULLET**************BULLET**************		
+		function bullet(){
+			this.dX = 2;
+			this.dY = 2;
+			this.X;
+			this.Y;
+			this.deg;
+			this.iterations = 0;
+			this.img = new Image();
+			this.img.src = "laser2.png";
+			this.removeBullet = function(isAlien){
+				if(this.iterations == 40){
+					if(!isAlien)
+						bullets.splice((bullets.indexOf(this)),1);
+					else
+						alienBullets.splice((alienBullets.indexOf(this)),1)
+				}
+			}
+			this.move = function(){
+				this.iterations++;
+				this.X += this.dX;
+				this.Y += this.dY;
+			}
+			this.initBullet = function(){
+				this.deg = ship.deg;
+				this.X = ship.X+16;
+				this.Y = ship.Y+16;
+				this.dX = (-(Math.sin(-(ship.deg*Math.PI/180))))*10;
+				this.dY = (-(Math.cos(-(ship.deg*Math.PI/180))))*10;
+				bullets.push(this);
+			}
+			this.checkBorders = function(){
+				if(this.Y >= 605){
+					this.Y = -3;
+				}else if(this.Y <= 0){
+					this.Y = 603;
+				}
+
+				if(this.X >= 605){
+					this.X = -3;
+				}else if(this.X <= 0){
+					this.X = 603;
+				}
+			}
+			this.updateBullet = function(isAlien){
+				this.move();
+				this.removeBullet(isAlien);
+				this.checkBorders();
+				this.drawRotate();
+				//checkCollision();
+			}
+			this.drawRotate = function(){
+				context.save();
+	 			context.translate(this.X, this.Y);
+	 			context.translate(5, 5);
+	 			context.rotate(this.deg*Math.PI/180);
+	 			context.drawImage((this.img),-(this.img).width/2,-(this.img).width/2);
+	 			context.restore();
+			}
+		}
+
+//fire from middle of ship
+     
+    	
+    	function clear(){
+	 		context.clearRect(0, 0, 1200, 1000);
+
+	 	}
+	 	function init(){
+	 		canvas = document.getElementById('myCanvas');
+     		context = canvas.getContext('2d');
+
+	 		
+	 		for(i =0; i < level; i++){
+	 			var ass = new asteroid();
+	 			ass.initAsteroid();
+	 		}
+
+	 		context.font = "100px Georgia";
+	 		context.strokeText("ASTEROIDS", 5, 200);
+	 		context.font = "50px Georgia";
+	 		context.strokeText("Press Enter to Play", 5, 400);
+
+
+     		window.addEventListener( 'keydown',onKeyDown,true );
+			window.addEventListener( 'keyup',onKeyUp,true );
+     	
+     		animateFrame();
+	 	}
+
+	 	function reinit(){
+	 		for(i =0; i < level; i++){
+	 			var ass = new asteroid();
+	 			ass.initAsteroid();
+	 		}
+	 		ship.lives = 3;
+	 		ship.dX = 0;
+	 		ship.dY = 0;
+	 	}
+
+	 	function animateFrame(){
+	 		requestAnimationFrame(animateFrame, canvas);
+	 		game();
+	 	}
+
+        function game(){
+        	if(inProgress){
+        		if(ship.lives == -1)
+        				reinit();
+	        	clear();
+		 		ship.updateShip();
+		 		alienTimer++;
+
+		 		if(ship.isFiring && bulletTimer == 0){
+		 			var laser = new bullet();
+		 			laser.initBullet();
+		 			bulletTimer = 15;
+		 		}
+		 		if(bulletTimer != 0)
+		 			bulletTimer--;
+
+//update all objects
+		 		for(i of bullets){
+		 			i.updateBullet(false);
+		 		}
+		 		for(i of alienBullets){
+		 			i.updateBullet(true);
+		 		}
+		 		for(i of asteroids){
+		 			i.updateAsteroids();
+		 		}
+		 		for(i of aliens){
+		 			i.updateAlien();
+		 		}
+
+//
+		 		if(asteroids.length == 0 && ship.lives > 0){
+		 			level++;
+		 			reinit();
+		 		}
+		 		if(alienTimer == (1000)/level){
+		 			var al = new alien();
+		 			al.initAlien();
+		 			alienTimer = 0;
+		 		}
+
+		 		if(ship.isExploded && alienTimer%40 == 0){
+		 			ship.isExploded = false;
+		 			ship.img.src = "userShip.png";
+		 		}
+
+		 		if(ship.lives <= 0){
+		 			endGame();
+		 			level = 4;
+		 			reinit();
+		 			inProgress = false;
+		 		}
+		 	}
+	 		
+	 		context.font = "20px Arial";
+	 		context.strokeText("Score:" + score, 0, 25);
+	 		context.strokeText("Level:" + (level-3), 280, 25);
+	 		context.strokeText("Lives:" + ship.lives, 530, 25);
+	 		
+	 	
+	 	}
+	 	function endGame(){
+	 		context.font = "200px Arial";
+		 	aliens.splice(0);
+		 	bullets.splice(0);
+		 	asteroids.splice(0);
+		 	clear();
+		 	context.strokeText("GAME", 0, 200);
+		 	context.strokeText("OVER", 0, 400);
+		 	context.font = "50px Arial";
+		 	context.strokeText("Press Enter to Play Again", 0, 550);
+	 	}
+	 	function onKeyDown(evt) 
+		{	
+			// 39 is the right arrow
+			// 37 is the left arrow
+ 			if (evt.keyCode == 39) 		ship.isLeft = true; // rigth arrow key
+			else if (evt.keyCode == 37) 	ship.isRight = true;
+			if(evt.keyCode == 38) 	{
+				ship.isAccelerating = true;
+			}		
+			if(evt.keyCode == 32)	ship.isFiring = true;
+			if(evt.keyCode == 13)	inProgress = !inProgress;
+		
+		}
+			//*** and UNSET them when the right or left key is released
+		function onKeyUp(evt) 
+		{
+			if (evt.keyCode == 38){
+				ship.isAccelerating = false;
+			}
+			if (evt.keyCode == 39) 		ship.isLeft = false; // rigth arrow key
+			else if (evt.keyCode == 37) 	ship.isRight = false;
+			if(evt.keyCode == 32)	ship.isFiring = false;
+		}
+	 	
+	</script>
+	</head>
+	<body onload="init()">
+	</body>
+</html>
