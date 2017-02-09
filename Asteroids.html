@@ -124,7 +124,7 @@
 						else
 							this.dY=0;
 					}
-				}else if(this.isAccelerating && (this.dX <= 5 && this.dX >= -5) && (this.dY <= 5 && this.dY >= -5)){
+				}else if(this.isAccelerating){ //&& (this.dX <= 5 && this.dX >= -5) && (this.dY <= 5 && this.dY >= -5)){
 					ship.dX += -(Math.sin(-(ship.deg*Math.PI/180)));
 					ship.dY += -(Math.cos(-(ship.deg*Math.PI/180)));
 				}
