@@ -66,8 +66,22 @@
 							this.lives--;
 							this.X = 300;
 							this.Y = 300;
+							this.dX = 0;
+							this.dY = 0;
 						}
 					}
+					for(i of aliens){
+						if((i.X >= this.X && i.X <= (this.img.width+this.X)) && (i.Y >= this.Y && i.Y <= (this.img.height+this.X))){
+							this.Explode();
+							this.isExploded = true;
+							this.lives--;
+							this.X = 300;
+							this.Y = 300;
+							this.dX = 0;
+							this.dY = 0;
+						}
+					}
+					
 				}
 			}
 			this.move = function(){
@@ -492,6 +506,8 @@
 		 		if(ship.lives <= 0){
 		 			endGame();
 		 			level = 4;
+		 			score = 0;
+		 			ship.lives = 3;
 		 			reinit();
 		 			inProgress = false;
 		 		}
