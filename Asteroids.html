@@ -447,7 +447,6 @@
 	 			var ass = new asteroid();
 	 			ass.initAsteroid();
 	 		}
-	 		ship.lives = 3;
 	 		ship.dX = 0;
 	 		ship.dY = 0;
 	 	}
@@ -507,6 +506,7 @@
 		 			endGame();
 		 			level = 4;
 		 			score = 0;
+					ship.lives = 3;
 		 			reinit();
 		 			inProgress = false;
 		 		}
