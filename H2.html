@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+        <title>Hackathon2 </title>
+        <h1>Hackathon 2: Ball Color On Click</h1>
+        <style type="text/css">
+                canvas { border: 3px solid black; }
+        </style>
+
+        <script type="text/javascript">
+
+        var mouseX, mouseY;
+        //var ballX = 15;
+        //var ballY = 15;
+        var BALL_RADIUS = 15;
+        var WIDTH;
+        var HEIGHT;
+        var ctx;
+        var canvas;
+        var interval =10;
+        var intervalId = 0;
+        var isUp = false;
+        var canvasMinX= 0;
+        var canvasMaxX = 300;
+        var score = 0;
+
+
+        var ball1;
+        //var color;
+
+        
+
+        function init_mouse()
+        {
+                canvasMinX = canvas.offsetLeft;
+                canvasMaxX = canvasMinX + WIDTH;
+
+        }
+        function onMouseMove(evt)
+                {       
+                        if (evt.pageX > canvasMinX && evt.pageX < canvasMaxX) 
+                        {
+                        
+                                mouseX = evt.clientX;  // canvasMinX is almost 0 BTW.
+                                mouseY = evt.clientY;
+                        }    
+                }
+        
+        function onMouseClick(evt){
+                mouseX = evt.clientX;
+                mouseY = evt.clientY-80;
+                if((mouseX <= (ball1.xloc + 25) && mouseX >= (ball1.xloc -25)) && (mouseY <= (ball1.yloc + 25) && mouseY >= (ball1.yloc - 25))){
+                        ball1.changeColor();
+                        score++;
+                }
+                
+        }
+        function ball(){
+                this.xloc = 100;
+                this.yloc = 50;
+                this.dy = -2; //Math.floor(Math.random()*4);
+                this.dx = (Math.floor(Math.random()*8) - 4);
+                if(this.dx == 0) this.dx++;
+                this.color = getRandomColor();
+
+                drawBall(this.xloc,this.yloc);
+
+                this.updateLocation = function() {
+                        drawBall(this.xloc, this.yloc, this.color);
+                }       
+
+                this.reinit = function(){
+                        this.dy = -2//Math.floor(Math.random()*4);
+                        this.dx = Math.floor(Math.random()*8)-4;
+                        if(this.dx == 0) this.dx++;
+                        this.xloc = 100;
+                        this.yloc = 50;
+                        drawBall(this.xloc,this.yloc, this.color);
+                        score = 0;
+                }
+
+                this.changeColor = function(){
+                        this.color = getRandomColor();
+
+                }
+        }
+
+        function drawBall(xloc,yloc,color){
+                        circle(xloc, yloc, BALL_RADIUS, color);
+        }
+        function init(){
+                ctx = document.getElementById('canvas').getContext('2d');
+                canvas = document.getElementById('canvas');
+                WIDTH = ctx.canvas.width; // not with the canvas 'variable'
+                HEIGHT = ctx.canvas.height;
+
+                window.addEventListener('click', onMouseClick, true);
+                        
+                init_mouse();   
+                //canvas.onmousemove = onMouseMove;
+
+                ball1 = new ball();
+                // call setInterval to request browser to run function every 
+                //      X milli sec
+                setInterval( draw, interval );
+
+        }
+        function clear() 
+        {
+                ctx.clearRect(0, 0, WIDTH, HEIGHT);
+        }
+        function circle(x,y,r, colour) 
+        {
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI*2, true);
+                ctx.closePath();
+                ctx.fillStyle = colour;
+                ctx.fill();
+        }
+        function draw(){
+                clear();
+                //circle(30,30,5);
+                
+                ball1.updateLocation();
+
+                if( ball1.xloc + ball1.dx > WIDTH - BALL_RADIUS || ball1.xloc + ball1.dx < 0  ){
+                        ball1.dx = -(ball1.dx);
+                }
+
+                // is it below ground
+                if( (ball1.yloc + ball1.dy) > HEIGHT - BALL_RADIUS)
+                {
+
+                        ball1.dy = -(ball1.dy);
+                        isUp = true;
+                }
+                // or in the ceiling (0,0) is top left corner
+                else if( ball1.yloc + ball1.dy < BALL_RADIUS ) {
+                        ball1.dy = -(ball1.dy);
+                        isUp = false;
+                }
+        
+                
+                if( isUp ) 
+                {
+                        ball1.dy += 1;  // adding 'gravity' 
+                if( ball1.dy >= 0 )
+                        isUp = false;
+                }
+
+                else // down
+                {
+                        ball1.dy += 1; // adding 'gravity'
+                }
+
+                // check left wall
+                if( ball1.xloc - ball1.dx < 0 )
+                        ball1.xloc =  BALL_RADIUS;
+
+                if( ball1.xloc + ball1.dx > WIDTH - BALL_RADIUS)
+                        ball1.xloc = canvasMinX;
+
+                if(ball1.yloc + ball1.dy > HEIGHT - BALL_RADIUS)
+                        ball1.yloc = HEIGHT - BALL_RADIUS;
+
+
+                ball1.xloc += ball1.dx;
+                ball1.yloc += ball1.dy;
+                //ball1.drawBall();
+
+                document.getElementById("text").innerHTML = "Score: " + score;
+
+        }
+        function reinit(){
+                ball1.reinit();
+
+        }
+        function getRandomColor(){
+                var letters = '0,1,2,3,4,5,6,7,8,9,A,B,C,D,E,F'.split(',');
+                var color = '#';
+                for(var i = 0; i < 6; i++){
+                        color += letters[Math.round(Math.random() * 15)];
+                }
+                return color;
+        }
+
+
+</script>
+</head>
+
+<!-- HERE we add an explicit call to the draw() function -->
+<body onload="init()">
+<canvas id="canvas" width="300" height="300">
+Your browser does not support the canvas element.
+
+</canvas>
+
+<h2><span id="text"></span></h2>
+<button onclick="reinit()">Restart</button>
+
+
+
+</body>
+</html>
+
+
+
+
